@@ -7,7 +7,7 @@
     "build": "npmize build",
     "start": "run ./src/index.ts",
     "tsc": "tsc --noEmit --watch",
-    "lab": "run ./src/__lab__.ts"
+    "lab": "run ./src/__lab__/index.ts"
   },
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
