@@ -5,10 +5,11 @@ import {
   InvalidPurposeError,
 } from './errors'
 import {
+  LogLevel,
   OneTimeJwtOptions,
+  OneTimeJwtCreateTokenResult,
   OneTimeJwtCreateTokenOptions,
   OneTimeJwtVerifyTokenOptions,
-  OneTimeJwtCreateTokenResult,
 } from './types.type'
 import { generateOtp } from './helpers'
 import { TupleResult } from './utils.type'
@@ -24,7 +25,24 @@ export default class OneTimeJwt {
     this.options = options
   }
 
+  private log(level: LogLevel, message: string): void {
+    if (!this.options.logLevel || this.options.logLevel === 'silent') return
+
+    const levels = ['debug', 'info', 'warn', 'error']
+    if (levels.indexOf(level) >= levels.indexOf(this.options.logLevel)) {
+      if (level === 'error') {
+        console.error(`[OneTimeJwt] ${message}`)
+      } else if (level === 'warn') {
+        console.warn(`[OneTimeJwt] ${message}`)
+      } else {
+        console.log(`[OneTimeJwt] ${message}`)
+      }
+    }
+  }
+
   private generateOTPSecret(purpose: string, otp: string): Uint8Array {
+    this.log('debug', `Generating OTP secret for purpose: ${purpose}`)
+
     if (typeof purpose !== 'string') {
       throw new InvalidPurposeError('Invalid purpose expected string')
     }
@@ -51,8 +69,10 @@ export default class OneTimeJwt {
   public async createToken<T extends unknown>(
     purpose: string,
     payload: T,
-    options: string | OneTimeJwtCreateTokenOptions = {}
+    options: OneTimeJwtCreateTokenOptions = {}
   ): Promise<OneTimeJwtCreateTokenResult> {
+    this.log('info', `Creating token for purpose: ${purpose}`)
+
     let otp: string
     if (typeof options === 'string') {
       /* 
@@ -68,10 +88,17 @@ export default class OneTimeJwt {
       /* 
         If otpType or otpLength is provided in options then we have to generate the otp
        */
-      otp = generateOtp(
-        options.otpType ?? 'alphanumeric',
-        options.otpLength ?? 6
-      )
+
+      const otpType = options.otpType ?? 'alphanumeric'
+      const otpLength = options.otpLength ?? 6
+
+      if (otpLength <= 0) {
+        throw new InvalidOTPError(
+          'Invalid OTP length expected positive number > 0'
+        )
+      }
+
+      otp = generateOtp(otpType, otpLength)
     } else {
       /* 
         Default to alphanumeric otp of length 6
@@ -87,15 +114,23 @@ export default class OneTimeJwt {
       }
     )
 
+    this.log('info', `Token created successfully for purpose: ${purpose}`)
+
     return { token, otp }
   }
 
   public async verifyToken<T extends unknown>(
     purpose: string,
     token: string | string[],
-    options: string | OneTimeJwtVerifyTokenOptions
+    options: OneTimeJwtVerifyTokenOptions
   ): Promise<T> {
+    this.log('info', `Verifying token for purpose: ${purpose}`)
+
     const tokenArray = Array.isArray(token) ? token : [token]
+
+    if (tokenArray.length === 0) {
+      throw new InvalidTokenError('No tokens provided for verification')
+    }
 
     for (const token of tokenArray) {
       if (typeof token !== 'string') {
@@ -103,7 +138,23 @@ export default class OneTimeJwt {
       }
     }
 
+    const maxTokenLimitPerPurpose =
+      this.options.maxTokenLimitPerPurpose ??
+      (typeof options === 'string'
+        ? undefined
+        : options.maxTokenLimitPerPurpose) ??
+      3
+
+    if (tokenArray.length > maxTokenLimitPerPurpose) {
+      throw new InvalidTokenError(
+        `Invalid token expected at most ${this.options.maxTokenLimitPerPurpose} tokens`
+      )
+    }
+
     const otp = typeof options === 'string' ? options : options.otp
+    if (typeof otp !== 'string' || !otp) {
+      throw new InvalidOTPError('Invalid OTP expected non-empty string')
+    }
 
     const jwtPayload = await safePromiseAny(
       tokenArray.map((token) =>
@@ -118,32 +169,49 @@ export default class OneTimeJwt {
       throw new IncorrectOTPError('Incorrect OTP')
     }
 
+    this.log('info', `Token verified successfully for purpose: ${purpose}`)
+
     return jwtPayload.payload as T
   }
 
   public async safeCreateToken<T extends unknown>(
     purpose: string,
     payload: T,
-    options: string | OneTimeJwtCreateTokenOptions = {}
+    options: OneTimeJwtCreateTokenOptions = {}
   ): Promise<TupleResult<OneTimeJwtCreateTokenResult, Error>> {
+    this.log('info', `Safely creating token for purpose: ${purpose}`)
+
     try {
       const result = await this.createToken<T>(purpose, payload, options)
-      return [result, null] as TupleResult<OneTimeJwtCreateTokenResult, Error>
+
+      this.log('info', `Token safely created for purpose: ${purpose}`)
+      return [result, null] as any
     } catch (error) {
-      return [null, error] as TupleResult<OneTimeJwtCreateTokenResult, Error>
+      this.log(
+        'error',
+        `Error while safely creating token for purpose: ${purpose}: ${error}`
+      )
+      return [null, error] as any
     }
   }
 
   public async safeVerifyToken<T extends unknown>(
     purpose: string,
     token: string | string[],
-    options: string | OneTimeJwtVerifyTokenOptions
-  ): Promise<TupleResult<T, null>> {
+    options: OneTimeJwtVerifyTokenOptions
+  ): Promise<TupleResult<T, Error>> {
+    this.log('info', `Safely verifying token for purpose: ${purpose}`)
     try {
       const result = await this.verifyToken<T>(purpose, token, options)
-      return [result, null] as TupleResult<T, null>
+
+      this.log('info', `Token safely verified for purpose: ${purpose}`)
+      return [result, null] as any
     } catch (error) {
-      return [null, error] as TupleResult<T, null>
+      this.log(
+        'error',
+        `Error while safely verifying token for purpose: ${purpose}: ${error}`
+      )
+      return [null, error] as any
     }
   }
 }

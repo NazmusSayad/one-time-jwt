@@ -1,11 +1,16 @@
 import { JWTHeaderParameters, JWTVerifyOptions } from 'jose'
 
+export type LogLevel = 'debug' | 'info' | 'warn' | 'error' | 'silent'
+
 export type OneTimeJwtOptions = {
+  logLevel?: LogLevel
   secretDivider?: string
+  maxTokenLimitPerPurpose?: number
 }
 
 export type OneTimeJwtCreateTokenOptions =
-  | (
+  | string
+  | ({} & (
       | {
           otp?: string
         }
@@ -13,17 +18,19 @@ export type OneTimeJwtCreateTokenOptions =
           otpType?: TOtpType
           otpLength?: number
         }
-    )
-  | {}
+    ))
 
 export type OneTimeJwtCreateTokenResult = {
   token: string
   otp: string
 }
 
-export type OneTimeJwtVerifyTokenOptions = {
-  otp: string
-}
+export type OneTimeJwtVerifyTokenOptions =
+  | string
+  | {
+      otp: string
+      maxTokenLimitPerPurpose?: number
+    }
 
 export type TOtpType =
   | 'digits'
