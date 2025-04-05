@@ -2,6 +2,7 @@
   "name": "one-time-jwt",
   "version": "0.0.0",
   "scripts": {
+    "test": "bun test",
     "dev": "npmize dev",
     "build": "npmize build",
     "start": "run ./src/index.ts",
@@ -11,6 +12,7 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "devDependencies": {
+    "@types/bun": "^1.2.8",
     "npmize": "^1.1.11",
     "typescript": "^5.8.3"
   },
