@@ -66,6 +66,27 @@ export default class OneTimeJwt {
     return OTPSecret
   }
 
+  /**
+   * Creates a one-time JWT token with an associated OTP.
+   * @param purpose - The purpose of the token.
+   * @param payload - The payload to include in the token.
+   * @param options - Options for token creation.
+   * @returns An object containing the token and OTP.
+   * @throws If the OTP length is invalid.
+   * @example
+   * // Example with numeric OTP of length 4
+   * const jwt = new OneTimeJwt('baseSecret');
+   * const result = await jwt.createToken('login', { userId: 123 }, { otpType: 'numeric', otpLength: 4 });
+   * console.log(result.token, result.otp);
+   *
+   * // Example with alphanumeric OTP of default length
+   * const result2 = await jwt.createToken('register', { email: 'test@example.com' });
+   * console.log(result2.token, result2.otp);
+   *
+   * // Example with custom OTP
+   * const result3 = await jwt.createToken('reset', { userId: 456 }, 'customOTP123');
+   * console.log(result3.token, result3.otp);
+   */
   public async createToken<T extends unknown>(
     purpose: string,
     payload: T,
@@ -119,6 +140,28 @@ export default class OneTimeJwt {
     return { token, otp }
   }
 
+  /**
+   * Verifies a one-time JWT token using the associated OTP.
+   * @param purpose - The purpose of the token.
+   * @param token - The token(s) to verify.
+   * @param options - Options for token verification.
+   * @returns The payload extracted from the verified token.
+   * @throws If the token is invalid or exceeds the maximum limit.
+   * @throws If the OTP is invalid.
+   * @example
+   * // Example with single token and OTP
+   * const jwt = new OneTimeJwt('baseSecret');
+   * const payload = await jwt.verifyToken('login', 'tokenString', { otp: '123456' });
+   * console.log(payload);
+   *
+   * // Example with multiple tokens and OTP
+   * const payload2 = await jwt.verifyToken('login', ['token1', 'token2'], { otp: '654321' });
+   * console.log(payload2);
+   *
+   * // Example with OTP as a string
+   * const payload3 = await jwt.verifyToken('login', 'tokenString', '123456');
+   * console.log(payload3);
+   */
   public async verifyToken<T extends unknown>(
     purpose: string,
     token: string | string[],
@@ -191,6 +234,30 @@ export default class OneTimeJwt {
     }
   }
 
+  /**
+   * Safely creates a one-time JWT token with an associated OTP, catching any errors.
+   * @param purpose - The purpose of the token.
+   * @param payload - The payload to include in the token.
+   * @param options - Options for token creation.
+   * @returns A tuple containing the result or an error.
+   * @example
+   * // Example with default options
+   * const jwt = new OneTimeJwt('baseSecret');
+   * const [result, error] = await jwt.safeCreateToken('login', { userId: 123 });
+   * if (error) {
+   *   console.error(error);
+   * } else {
+   *   console.log(result.token, result.otp);
+   * }
+   *
+   * // Example with custom OTP
+   * const [result2, error2] = await jwt.safeCreateToken('reset', { userId: 456 }, 'customOTP123');
+   * if (error2) {
+   *   console.error(error2);
+   * } else {
+   *   console.log(result2.token, result2.otp);
+   * }
+   */
   public async safeCreateToken<T extends unknown>(
     purpose: string,
     payload: T,
@@ -212,6 +279,38 @@ export default class OneTimeJwt {
     }
   }
 
+  /**
+   * Safely verifies a one-time JWT token using the associated OTP, catching any errors.
+   * @param purpose - The purpose of the token.
+   * @param token - The token(s) to verify.
+   * @param options - Options for token verification.
+   * @returns A tuple containing the result or an error.
+   * @example
+   * // Example with single token and OTP
+   * const jwt = new OneTimeJwt('baseSecret');
+   * const [payload, error] = await jwt.safeVerifyToken('login', 'tokenString', { otp: '123456' });
+   * if (error) {
+   *   console.error(error);
+   * } else {
+   *   console.log(payload);
+   * }
+   *
+   * // Example with multiple tokens and OTP
+   * const [payload2, error2] = await jwt.safeVerifyToken('login', ['token1', 'token2'], { otp: '654321' });
+   * if (error2) {
+   *   console.error(error2);
+   * } else {
+   *   console.log(payload2);
+   * }
+   *
+   * // Example with OTP as a string
+   * const [payload3, error3] = await jwt.safeVerifyToken('login', 'tokenString', '123456');
+   * if (error3) {
+   *   console.error(error3);
+   * } else {
+   *   console.log(payload3);
+   * }
+   */
   public async safeVerifyToken<T extends unknown>(
     purpose: string,
     token: string | string[],
