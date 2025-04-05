@@ -10,15 +10,15 @@ export type OneTimeJwtOptions = {
 
 export type OneTimeJwtCreateTokenOptions =
   | string
-  | ({} & (
-      | {
-          otp?: string
-        }
-      | {
-          otpType?: TOtpType
-          otpLength?: number
-        }
-    ))
+  | (Omit<TSignOptions, 'secret'> & {} & (
+        | {
+            otp?: string
+          }
+        | {
+            otpType?: TOtpType
+            otpLength?: number
+          }
+      ))
 
 export type OneTimeJwtCreateTokenResult = {
   token: string
@@ -33,12 +33,14 @@ export type OneTimeJwtVerifyTokenOptions =
     }
 
 export type TOtpType =
+  | 'base64'
   | 'digits'
   | 'letters'
   | 'letters-upper'
-  | 'letter-lower'
+  | 'letters-lower'
   | 'alphanumeric'
-  | 'base64'
+  | 'alphanumeric-upper'
+  | 'alphanumeric-lower'
 
 export type TSignOptions = {
   secret: Uint8Array

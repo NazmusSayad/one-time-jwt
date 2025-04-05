@@ -35,12 +35,22 @@ export function generateLetterOtp(length: number) {
 export function generateOtp(type: TOtpType, length: number): string {
   if (type === 'digits') {
     return generateNumberOTP(length)
-  } else if (type === 'letters') {
-    return generateLetterOtp(length)
-  } else if (type === 'alphanumeric') {
-    return generateAlphanumericOTP(length)
   } else if (type === 'base64') {
     return generateBase64OTP(length)
+  } else if (type.startsWith('letters')) {
+    const otp = generateLetterOtp(length)
+
+    if (type === 'letters-upper') return otp.toUpperCase()
+    else if (type === 'letters-lower') return otp.toLowerCase()
+
+    return otp
+  } else if (type.startsWith('alphanumeric')) {
+    const otp = generateAlphanumericOTP(length)
+
+    if (type === 'alphanumeric-upper') return otp.toUpperCase()
+    else if (type === 'alphanumeric-lower') return otp.toLowerCase()
+
+    return otp
   } else {
     throw new Error('Invalid OTP type')
   }

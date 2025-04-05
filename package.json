@@ -1,6 +1,6 @@
 {
   "name": "one-time-jwt",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "scripts": {
     "test": "bun test",
     "dev": "npmize dev",

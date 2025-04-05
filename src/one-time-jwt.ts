@@ -156,22 +156,39 @@ export default class OneTimeJwt {
       throw new InvalidOTPError('Invalid OTP expected non-empty string')
     }
 
-    const jwtPayload = await safePromiseAny(
-      tokenArray.map((token) =>
-        verifyJwt(token, {
-          ...(typeof options === 'string' ? {} : options),
-          secret: this.generateOTPSecret(purpose, otp),
-        })
+    try {
+      const jwtPayload = await safePromiseAny(
+        tokenArray.map((token) =>
+          verifyJwt(token, {
+            ...(typeof options === 'string' ? {} : options),
+            secret: this.generateOTPSecret(purpose, otp),
+          })
+        )
       )
-    )
 
-    if (!jwtPayload) {
-      throw new IncorrectOTPError('Incorrect OTP')
+      if (!jwtPayload) {
+        throw new IncorrectOTPError('Incorrect OTP')
+      }
+
+      this.log('info', `Token verified successfully for purpose: ${purpose}`)
+
+      return jwtPayload.payload as T
+    } catch (err) {
+      if (err instanceof Error && err.name === 'JWSInvalid') {
+        this.log('error', `Invalid token for purpose: ${purpose}`)
+        throw new InvalidTokenError('Invalid JWT token')
+      }
+
+      if (
+        err instanceof Error &&
+        err.name === 'JWSSignatureVerificationFailed'
+      ) {
+        this.log('error', `Invalid token signature for purpose: ${purpose}`)
+        throw new IncorrectOTPError('Invalid token signature')
+      }
+
+      throw err
     }
-
-    this.log('info', `Token verified successfully for purpose: ${purpose}`)
-
-    return jwtPayload.payload as T
   }
 
   public async safeCreateToken<T extends unknown>(
