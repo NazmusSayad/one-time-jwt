@@ -2,7 +2,6 @@
   "name": "one-time-jwt",
   "version": "0.0.0",
   "scripts": {
-    "test": "jest",
     "dev": "npmize dev",
     "build": "npmize build",
     "start": "run ./src/index.ts",
@@ -12,12 +11,8 @@
   "main": "./dist/index.cjs",
   "module": "./dist/index.mjs",
   "devDependencies": {
-    "@types/jest": "^29.5.14",
-    "jest": "^29.7.0",
     "npmize": "^1.1.11",
-    "ts-jest": "^29.3.0",
-    "ts-node": "^10.9.2",
-    "typescript": "^5.8.2"
+    "typescript": "^5.8.3"
   },
   "dependencies": {
     "jose": "^6.0.10"
